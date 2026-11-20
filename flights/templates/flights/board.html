@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Schiphol {{ direction }}</title>
+<style>
+  :root { --bg:#0b1d3a; --panel:#10284d; --text:#f2f5fa; --muted:#9db0cf; --accent:#ffd400; --bad:#ff6b6b; --warn:#ffb347; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.4 system-ui,-apple-system,Segoe UI,sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width:960px; margin:0 auto; padding:16px; }
+  h1 { margin:8px 0 12px; font-size:22px; }
+  nav a { color:var(--muted); text-decoration:none; margin-right:16px; padding-bottom:4px; }
+  nav a.active { color:var(--accent); border-bottom:2px solid var(--accent); }
+  form { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0; }
+  input, button { padding:8px 10px; border-radius:6px; border:1px solid #28467a; background:var(--panel); color:var(--text); font:inherit; }
+  button { background:var(--accent); color:#000; border:0; cursor:pointer; font-weight:600; }
+  table { width:100%; border-collapse:collapse; background:var(--panel); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 12px; border-bottom:1px solid #1b3a6b; }
+  th { color:var(--muted); font-weight:500; font-size:13px; }
+  td.time { font-variant-numeric:tabular-nums; font-weight:600; }
+  .new-time { color:var(--warn); margin-left:6px; font-size:13px; }
+  .status.cancelled { color:var(--bad); font-weight:600; }
+  .status.delayed { color:var(--warn); }
+  .muted { color:var(--muted); }
+  .notice { background:#3a2a0b; border:1px solid var(--warn); padding:10px 12px; border-radius:6px; margin:12px 0; }
+  .pager { display:flex; justify-content:space-between; margin:16px 0; }
+  .pager a { color:var(--accent); text-decoration:none; }
+  @media (max-width:640px) { .hide-sm { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Schiphol</h1>
+  <nav>
+    <a href="{% url 'board' 'departures' %}" class="{% if direction == 'departures' %}active{% endif %}">Departures</a>
+    <a href="{% url 'board' 'arrivals' %}" class="{% if direction == 'arrivals' %}active{% endif %}">Arrivals</a>
+  </nav>
+
+  <form method="get">
+    <input type="date" name="date" value="{{ values.date }}" aria-label="Date">
+    <input type="text" name="airline" value="{{ values.airline }}" placeholder="Airline (KL)" maxlength="3" size="10" aria-label="Airline code">
+    <input type="text" name="airport" value="{{ values.airport }}" placeholder="Airport (LHR)" maxlength="3" size="10" aria-label="Airport code">
+    <button type="submit">Filter</button>
+  </form>
+
+  {% if error %}<div class="notice">{{ error }}</div>{% endif %}
+
+  <table id="board">
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>Flight</th>
+        <th>{% if direction == 'departures' %}To{% else %}From{% endif %}</th>
+        <th class="hide-sm">{% if direction == 'departures' %}Gate{% else %}Belt{% endif %}</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for f in flights %}
+      <tr>
+        <td class="time">{{ f.scheduled|default:"—" }}{% if f.expected %}<span class="new-time">{{ f.expected }}</span>{% endif %}</td>
+        <td>{{ f.flight }}</td>
+        <td>{{ f.airports|join:" → " }}</td>
+        <td class="hide-sm">{% if direction == 'departures' %}{{ f.gate|default:"—" }}{% else %}{{ f.belt|default:"—" }}{% endif %}</td>
+        <td class="status{% if f.cancelled %} cancelled{% elif f.delayed %} delayed{% endif %}">{{ f.status }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="muted">No flights to show.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pager">
+    {% if prev_page is not None %}<a href="?page={{ prev_page }}&date={{ values.date }}&airline={{ values.airline }}&airport={{ values.airport }}">← Previous</a>{% else %}<span></span>{% endif %}
+    {% if has_next %}<a href="?page={{ next_page }}&date={{ values.date }}&airline={{ values.airline }}&airport={{ values.airport }}">Next →</a>{% endif %}
+  </div>
+  <p class="muted">Data: Schiphol Public Flight API. Refreshes every minute.</p>
+</main>
+
+<script>
+  // Refresh the table every 60s from the JSON endpoint, without reloading the page.
+  // Cells are filled with textContent, so API data is never interpreted as HTML.
+  (function () {
+    var direction = "{{ direction }}";
+    var isDep = direction === "departures";
+    var tbody = document.querySelector("#board tbody");
+
+    function cell(text, cls) {
+      var td = document.createElement("td");
+      if (cls) td.className = cls;
+      td.textContent = text;
+      return td;
+    }
+
+    function render(flights) {
+      tbody.replaceChildren();
+      if (!flights.length) {
+        var tr = document.createElement("tr");
+        var td = cell("No flights to show.", "muted");
+        td.colSpan = 5;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+      flights.forEach(function (f) {
+        var tr = document.createElement("tr");
+        var time = cell(f.scheduled || "—", "time");
+        if (f.expected) {
+          var span = document.createElement("span");
+          span.className = "new-time";
+          span.textContent = f.expected;
+          time.appendChild(span);
+        }
+        tr.appendChild(time);
+        tr.appendChild(cell(f.flight));
+        tr.appendChild(cell((f.airports || []).join(" → ")));
+        tr.appendChild(cell((isDep ? f.gate : f.belt) || "—", "hide-sm"));
+        tr.appendChild(cell(f.status, "status" + (f.cancelled ? " cancelled" : f.delayed ? " delayed" : "")));
+        tbody.appendChild(tr);
+      });
+    }
+
+    function refresh() {
+      fetch("/api/" + direction + "/" + window.location.search, { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) { if (data) render(data.flights); })
+        .catch(function () { /* keep the current table on network errors */ });
+    }
+
+    setInterval(refresh, 60000);
+  })();
+</script>
+</body>
+</html>
