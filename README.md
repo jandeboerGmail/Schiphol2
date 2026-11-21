@@ -1,5 +1,6 @@
 # Schiphol flight board (Django)
-# Apluication against Schiphol API v4 with OATH validation 
+# Appluication against Schiphol API v4 with OATH 2.0 validati ob
+# Displaying Departions,Arrivals,  
 
 
 A small Django app that shows live Schiphol departures and arrivals using the
@@ -17,7 +18,9 @@ export SCHIPHOL_APP_KEY=your_app_key
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000/ (redirects to departures).
+#open Stire (redirects to departures).
+
+Open http://192.168.1.10:8000/ (redirects to departures).
 
 No database is used, so there are no migrations to run.
 
