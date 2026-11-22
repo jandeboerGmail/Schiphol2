@@ -44,8 +44,14 @@ USE_TZ = True
 STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Schiphol Public Flight API credentials (https://developer.schiphol.nl).
+# Schiphol API, OAuth 2.0 client-credentials flow (https://developer.schiphol.nl).
 # Read lazily so the project still starts without them; the board then shows a setup hint.
-SCHIPHOL_APP_ID = os.environ.get("SCHIPHOL_APP_ID", "")
-SCHIPHOL_APP_KEY = os.environ.get("SCHIPHOL_APP_KEY", "")
+SCHIPHOL_CLIENT_ID = os.environ.get("SCHIPHOL_CLIENT_ID", "")
+SCHIPHOL_CLIENT_SECRET = os.environ.get("SCHIPHOL_CLIENT_SECRET", "")
+SCHIPHOL_TOKEN_URL = os.environ.get("SCHIPHOL_TOKEN_URL", "https://api.auth.schiphol.nl/oauth/token")
+# The audience must match the API tier you subscribed to (public tier shown here).
+SCHIPHOL_AUDIENCE = os.environ.get("SCHIPHOL_AUDIENCE", "https://api.schiphol.nl/public")
+SCHIPHOL_FLIGHTS_URL = os.environ.get(
+    "SCHIPHOL_FLIGHTS_URL", "https://api.schiphol.nl/public/public-flights/v4/flights"
+)
 SCHIPHOL_CACHE_SECONDS = int(os.environ.get("SCHIPHOL_CACHE_SECONDS", "60"))

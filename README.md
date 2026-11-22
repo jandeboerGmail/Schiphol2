@@ -1,5 +1,5 @@
 # Schiphol flight board (Django)
-# Appluication against Schiphol API v4 with OATH 2.0 validati ob
+# Application against Schiphol API v4 with OATH 2.0 validati ob
 # Displaying Departions,Arrivals,  
 
 
@@ -15,7 +15,7 @@ pip install -r requirements.txt
 export SCHIPHOL_APP_ID=your_app_id
 export SCHIPHOL_APP_KEY=your_app_key
 
-python manage.py runserver
+python manage.py runserver 0.0.0.0:8000
 ```
 
 #open Stire (redirects to departures).
