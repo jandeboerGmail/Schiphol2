@@ -32,9 +32,10 @@
 <body>
 <main>
   <h1>Schiphol</h1>
-  <nav>
+ <nav>
     <a href="{% url 'board' 'departures' %}" class="{% if direction == 'departures' %}active{% endif %}">Departures</a>
     <a href="{% url 'board' 'arrivals' %}" class="{% if direction == 'arrivals' %}active{% endif %}">Arrivals</a>
+   <a href="{% url 'board' 'arrivals' %}" class="{% if direction == 'arrivals' %}active{% endif %}">Aircrafttypes</a>
   </nav>
 
   <form method="get">
